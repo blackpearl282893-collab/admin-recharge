@@ -151,7 +151,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB4-IVk2V8VAHm6jjfw3BqdvAOW02sh",
@@ -169,16 +169,10 @@
 
   const ALLOWED_EMAIL = "Blackpear282893@gmail.com"; 
 
-  onAuthStateChanged(auth, (user) => {
-    if (user && user.email === ALLOWED_EMAIL) {
-      document.getElementById('authOverlay').style.display = 'none';
-      document.getElementById('adminPanel').style.display = 'block';
-    }
-  });
-
-  document.getElementById('googleLoginBtn').addEventListener('click', () => {
-    signInWithPopup(auth, provider)
-      .then((result) => {
+  // التحقق من نتيجة إعادة التوجيه بعد رجوع المستخدم من جوجل
+  getRedirectResult(auth)
+    .then((result) => {
+      if (result) {
         const user = result.user;
         if (user.email === ALLOWED_EMAIL) {
           document.getElementById('authOverlay').style.display = 'none';
@@ -187,10 +181,22 @@
           document.getElementById('authMsg').textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
           auth.signOut();
         }
-      })
-      .catch((error) => {
-        document.getElementById('authMsg').textContent = "خطأ في تسجيل الدخول: " + error.message;
-      });
+      }
+    })
+    .catch((error) => {
+      document.getElementById('authMsg').textContent = "خطأ: " + error.message;
+    });
+
+  // فحص هل المستخدم مسجل مسبقاً
+  auth.onAuthStateChanged((user) => {
+    if (user && user.email === ALLOWED_EMAIL) {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+    }
+  });
+
+  document.getElementById('googleLoginBtn').addEventListener('click', () => {
+    signInWithRedirect(auth, provider);
   });
 </script>
 

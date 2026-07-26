@@ -189,10 +189,18 @@
   }
 
   async function saveData() {
+    const user = firebase.auth().currentUser;
+    const msg = document.getElementById('msg');
+
+    if (!user || user.uid !== ADMIN_UID) {
+      msg.style.color = "red";
+      msg.textContent = "غير مسموح لك بالحفظ، الـ ID غير مطابق!";
+      return;
+    }
+
     const bankKey = document.getElementById('bankSelect').value;
     const beneficiary = document.getElementById('beneficiary').value;
     const acc = document.getElementById('acc').value;
-    const msg = document.getElementById('msg');
 
     if (!bankKey) {
       alert("الرجاء اختيار البنك أولاً!");

@@ -151,8 +151,9 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+  // *** تأكد من وضع إعدادات مشروعك الحقيقية هنا ***
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_AUTH_DOMAIN",
@@ -167,23 +168,8 @@
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
 
-  // **حط هنا الإيميل ديالك بوحدك اللي بغيه يدخل**
-  const ALLOWED_EMAIL = "ayvox.recharge@gmail.com"; 
-
-  getRedirectResult(auth)
-    .then((result) => {
-      if (result && result.user) {
-        if (result.user.email === ALLOWED_EMAIL) {
-          document.getElementById('authOverlay').style.display = 'none';
-          document.getElementById('adminPanel').style.display = 'block';
-        } else {
-          document.getElementById('authMsg').textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
-          auth.signOut();
-        }
-      }
-    }).catch((error) => {
-      document.getElementById('authMsg').textContent = "خطأ: " + error.message;
-    });
+  // **الإيميل الوحيد المسموح له بالدخول**
+  const ALLOWED_EMAIL = "Blackpear282893@gmail.com"; 
 
   onAuthStateChanged(auth, (user) => {
     if (user && user.email === ALLOWED_EMAIL) {
@@ -192,8 +178,23 @@
     }
   });
 
-  document.getElementById('googleLoginBtn').addEventListener('click', () => {
-    signInWithRedirect(auth, provider);
+  document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('authMsg');
+    msg.textContent = "جاري الاتصال بـ Google...";
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      if (user.email === ALLOWED_EMAIL) {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+      } else {
+        msg.textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
+        await auth.signOut();
+      }
+    } catch (error) {
+      msg.textContent = "خطأ في تسجيل الدخول: " + error.message;
+    }
   });
 </script>
 

@@ -213,7 +213,8 @@
     };
 
     try {
-      const response = await fetch(`${FIREBASE_URL}/banks/${bankKey}.json`, {
+      const token = await user.getIdToken();
+      const response = await fetch(`${FIREBASE_URL}/banks/${bankKey}.json?auth=${token}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

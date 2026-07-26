@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>لوحة التحكم - تعديل البنوك</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #080b3d;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    select, input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #080b3d;
+      color: #fff;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #151b54;
+    }
+    .msg {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+    #loginScreen {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    #adminContent {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div id="loginScreen">
+    <h2>تسجيل الدخول للوحة التحكم</h2>
+    <p>يرجى تسجيل الدخول باستخدام حساب المسؤول المعتمد فقط.</p>
+    <button onclick="loginWithGoogle()">تسجيل الدخول بواسطة جوجل</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div id="adminContent">
+    <h2>لوحة التحكم لتعديل معلومات البنوك</h2>
+    
+    <div class="form-group">
+      <label for="bankSelect">اختر البنك:</label>
+      <select id="bankSelect" onchange="loadBankData()">
+        <option value="">-- اختر بنك --</option>
+        <option value="CIH_BANK">CIH BANK</option>
+        <option value="AL_BARID_BANK">Albarid Bank</option>
+        <option value="CASH_PLUS">CASH PLUS</option>
+        <option value="ATTIJARIWAFA_BANK">Attijari Bank</option>
+        <option value="BMCE_BANK_OF_AFRICA">BMCE BANK</option>
+        <option value="BANQUE_POPULAIRE">Bank Populaire</option>
+        <option value="CREDIT_DU_MAROC">CDM Bank</option>
+        <option value="CFG_BANK">CFG Bank</option>
+        <option value="SG_MAROC">Societe Generale</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="beneficiary">اسم المستفيد (Beneficiary):</label>
+      <input type="text" id="beneficiary" placeholder="أدخل اسم المستفيد هنا">
+    </div>
+
+    <div class="form-group">
+      <label for="acc">رقم الحساب / RIB / Motif:</label>
+      <input type="text" id="acc" placeholder="أدخل رقم الحساب هنا">
+    </div>
+
+    <button onclick="saveData()">حفظ التغييرات في Firebase</button>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+  const FIREBASE_URL = "https://admin-recharge-default-rtdb.firebaseio.com/";
+  
+  const firebaseConfig = {
+    databaseURL: FIREBASE_URL
+  };
+  
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  const ADMIN_EMAIL = "fahdsoft2@gmail.com";
+
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user && user.email === ADMIN_EMAIL) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminContent').style.display = 'block';
+    } else {
+      if (user) {
+        firebase.auth().signOut();
+        document.getElementById('loginMsg').style.color = 'red';
+        document.getElementById('loginMsg').textContent = 'هذا البريد غير مسموح له بالدخول كأدمن!';
+      }
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('adminContent').style.display = 'none';
+    }
+  });
+
+  function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).catch((error) => {
+      const loginMsg = document.getElementById('loginMsg');
+      loginMsg.style.color = 'red';
+      loginMsg.textContent = 'فشل تسجيل الدخول: ' + error.message;
+    });
+  }
+
+  async function loadBankData() {
+    const bankKey = document.getElementById('bankSelect').value;
+    const msg = document.getElementById('msg');
+    msg.textContent = "";
+    
+    if (!bankKey) {
+      document.getElementById('beneficiary').value = "";
+      document.getElementById('acc').value = "";
+      return;
+    }
+
+    try {
+      const response = await fetch(`${FIREBASE_URL}/banks/${bankKey}.json`);
+      const data = await response.json();
+      
+      if (data) {
+        document.getElementById('beneficiary').value = data.beneficiary || "";
+        document.getElementById('acc').value = data.acc || "";
+      } else {
+        document.getElementById('beneficiary').value = "";
+        document.getElementById('acc').value = "";
+      }
+    } catch (error) {
+      msg.style.color = "red";
+      msg.textContent = "خطأ أثناء جلب البيانات!";
+    }
+  }
+
+  async function saveData() {
+    const bankKey = document.getElementById('bankSelect').value;
+    const beneficiary = document.getElementById('beneficiary').value;
+    const acc = document.getElementById('acc').value;
+    const msg = document.getElementById('msg');
+
+    if (!bankKey) {
+      alert("الرجاء اختيار البنك أولاً!");
+      return;
+    }
+
+    const payload = {
+      beneficiary: beneficiary,
+      acc: acc
+    };
+
+    try {
+      const response = await fetch(`${FIREBASE_URL}/banks/${bankKey}.json`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        msg.style.color = "green";
+        msg.textContent = "تم الحفظ بنجاح!";
+      } else {
+        msg.style.color = "red";
+        msg.textContent = "فشل الحفظ!";
+      }
+    } catch (error) {
+      msg.style.color = "red";
+      msg.textContent = "حدث خطأ في الاتصال!";
+    }
+  }
+</script>
+
+</body>
+</html>

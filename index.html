@@ -156,7 +156,6 @@
   const firebaseConfig = {
     apiKey: "AIzaSyB4-IVk2V8VAHm6jjfw3BqdvaOW02sh",
     authDomain: "admin-recharge.firebaseapp.com",
-    databaseURL: "https://admin-recharge-default-rtdb.firebaseio.com/",
     projectId: "admin-recharge",
     storageBucket: "admin-recharge.appspot.com",
     messagingSenderId: "751264405190",
@@ -205,7 +204,6 @@
     const msg = document.getElementById('msg');
     msg.textContent = "";
     
-    // تأكد من أن الموقع مفتوح من الرابط الرسمي وليس localhost لتجنب مشاكل الصلاحيات
     if (!bankKey) {
       document.getElementById('beneficiary').value = "";
       document.getElementById('acc').value = "";

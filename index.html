@@ -59,6 +59,13 @@
     button:hover {
       background: #151b54;
     }
+    .logout-btn {
+      background: #d9534f;
+      margin-top: 5px;
+    }
+    .logout-btn:hover {
+      background: #c9302c;
+    }
     .msg {
       margin-top: 15px;
       text-align: center;
@@ -70,6 +77,12 @@
     }
     #adminContent {
       display: none;
+    }
+    .user-info {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
@@ -85,6 +98,7 @@
 
   <div id="adminContent">
     <h2>لوحة التحكم لتعديل معلومات البنوك</h2>
+    <div class="user-info" id="userInfo"></div>
     
     <div class="form-group">
       <label for="bankSelect">اختر البنك:</label>
@@ -113,6 +127,7 @@
     </div>
 
     <button onclick="saveData()">حفظ التغييرات في Firebase</button>
+    <button class="logout-btn" onclick="logoutAccount()">تسجيل الخروج</button>
     <div class="msg" id="msg"></div>
   </div>
 </div>
@@ -134,12 +149,16 @@
     firebase.initializeApp(firebaseConfig);
   }
 
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
   const ADMIN_UID = "4YFxcoEp8nd3ZmMxXcrYs97YjQn1";
 
   firebase.auth().onAuthStateChanged((user) => {
     if (user && user.uid === ADMIN_UID) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminContent').style.display = 'block';
+      document.getElementById('userInfo').textContent = "مسجل الدخول بـ: " + user.email;
+      loadBankData();
     } else {
       if (user) {
         firebase.auth().signOut();
@@ -148,6 +167,9 @@
       }
       document.getElementById('loginScreen').style.display = 'block';
       document.getElementById('adminContent').style.display = 'none';
+      document.getElementById('bankSelect').value = "";
+      document.getElementById('beneficiary').value = "";
+      document.getElementById('acc').value = "";
     }
   });
 
@@ -158,6 +180,10 @@
       loginMsg.style.color = 'red';
       loginMsg.textContent = 'فشل تسجيل الدخول: ' + error.message;
     });
+  }
+
+  function logoutAccount() {
+    firebase.auth().signOut();
   }
 
   async function loadBankData() {

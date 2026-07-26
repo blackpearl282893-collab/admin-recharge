@@ -59,6 +59,10 @@
     button:hover {
       background: #151b54;
     }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
     .logout-btn {
       background: #d9534f;
       margin-top: 5px;
@@ -83,6 +87,23 @@
       margin-bottom: 15px;
       font-size: 14px;
       color: #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ccc;
+      border-top: 2px solid #080b3d;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -126,7 +147,7 @@
       <input type="text" id="acc" placeholder="أدخل رقم الحساب هنا">
     </div>
 
-    <button onclick="saveData()">حفظ التغييرات في Firebase</button>
+    <button id="saveBtn" onclick="saveData()">حفظ التغييرات في Firebase</button>
     <button class="logout-btn" onclick="logoutAccount()">تسجيل الخروج</button>
     <div class="msg" id="msg"></div>
   </div>
@@ -149,7 +170,7 @@
     firebase.initializeApp(firebaseConfig);
   }
 
-  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
 
   const ADMIN_UID = "4YFxcoEp8nd3ZmMxXcrYs97YjQn1";
 
@@ -157,7 +178,7 @@
     if (user && user.uid === ADMIN_UID) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminContent').style.display = 'block';
-      document.getElementById('userInfo').textContent = "مسجل الدخول بـ: " + user.email;
+      document.getElementById('userInfo').innerHTML = 'مسجل الدخول بـ: ' + user.email + ' <span class="spinner"></span>';
       loadBankData();
     } else {
       if (user) {
@@ -217,6 +238,7 @@
   async function saveData() {
     const user = firebase.auth().currentUser;
     const msg = document.getElementById('msg');
+    const saveBtn = document.getElementById('saveBtn');
 
     if (!user || user.uid !== ADMIN_UID) {
       msg.style.color = "red";
@@ -238,8 +260,10 @@
       acc: acc
     };
 
+    saveBtn.disabled = true;
+
     try {
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       const response = await fetch(`${FIREBASE_URL}/banks/${bankKey}.json?auth=${token}`, {
         method: 'PUT',
         headers: {
@@ -258,6 +282,10 @@
     } catch (error) {
       msg.style.color = "red";
       msg.textContent = "حدث خطأ في الاتصال!";
+    } finally {
+      setTimeout(() => {
+        saveBtn.disabled = false;
+      }, 2000);
     }
   }
 </script>

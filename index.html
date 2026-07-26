@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>لوحة التحكم المحمية بجوجل</title>
+  <title>لوحة التحكم - تعديل البنوك</title>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <style>
     body {
       font-family: 'Tajawal', sans-serif;
@@ -42,7 +44,7 @@
       font-size: 16px;
       box-sizing: border-box;
     }
-    button.save-btn {
+    button {
       background: #080b3d;
       color: #fff;
       border: none;
@@ -54,7 +56,7 @@
       cursor: pointer;
       margin-top: 10px;
     }
-    button.save-btn:hover {
+    button:hover {
       background: #151b54;
     }
     .msg {
@@ -62,99 +64,64 @@
       text-align: center;
       font-weight: bold;
     }
-    #authOverlay {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .auth-box {
-      background: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
+    #loginScreen {
       text-align: center;
+      padding: 40px 20px;
     }
-    .google-btn {
-      background: #fff;
-      color: #333;
-      border: 1px solid #ccc;
-      padding: 12px;
-      width: 100%;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      transition: background 0.2s;
-    }
-    .google-btn:hover {
-      background: #f8f9fa;
+    #adminContent {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-<div id="authOverlay">
-  <div class="auth-box">
-    <h2>تسجيل دخول الأدمين</h2>
-    <p style="font-size: 13px; color: #666; margin-bottom: 20px;">المرجو تسجيل الدخول ببريدك الإلكتروني المعتمد</p>
+<div class="container">
+  <div id="loginScreen">
+    <h2>تسجيل الدخول للوحة التحكم</h2>
+    <p>يرجى تسجيل الدخول باستخدام حساب المسؤول المعتمد فقط.</p>
+    <button onclick="loginWithGoogle()">تسجيل الدخول بواسطة جوجل</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div id="adminContent">
+    <h2>لوحة التحكم لتعديل معلومات البنوك</h2>
     
-    <button class="google-btn" id="googleLoginBtn">
-      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.14C3.15 21.32 7.23 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.62H1.18C.43 8.13 0 9.83 0 12s.43 3.87 1.18 5.38l4.09-3.14z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.15 2.68 1.18 6.62l4.09 3.14c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
-      الدخول بواسطة Google
-    </button>
-    <p id="authMsg" style="color: red; margin-top: 15px; font-size: 14px;"></p>
+    <div class="form-group">
+      <label for="bankSelect">اختر البنك:</label>
+      <select id="bankSelect" onchange="loadBankData()">
+        <option value="">-- اختر بنك --</option>
+        <option value="CIH_BANK">CIH BANK</option>
+        <option value="AL_BARID_BANK">Albarid Bank</option>
+        <option value="CASH_PLUS">CASH PLUS</option>
+        <option value="ATTIJARIWAFA_BANK">Attijari Bank</option>
+        <option value="BMCE_BANK_OF_AFRICA">BMCE BANK</option>
+        <option value="BANQUE_POPULAIRE">Bank Populaire</option>
+        <option value="CREDIT_DU_MAROC">CDM Bank</option>
+        <option value="CFG_BANK">CFG Bank</option>
+        <option value="SG_MAROC">Societe Generale</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="beneficiary">اسم المستفيد (Beneficiary):</label>
+      <input type="text" id="beneficiary" placeholder="أدخل اسم المستفيد هنا">
+    </div>
+
+    <div class="form-group">
+      <label for="acc">رقم الحساب / RIB / Motif:</label>
+      <input type="text" id="acc" placeholder="أدخل رقم الحساب هنا">
+    </div>
+
+    <button onclick="saveData()">حفظ التغييرات في Firebase</button>
+    <div class="msg" id="msg"></div>
   </div>
 </div>
 
-<div class="container" id="adminPanel" style="display: none;">
-  <h2>تعديل معلومات البنوك</h2>
+<script>
+  const FIREBASE_URL = "https://admin-recharge-default-rtdb.firebaseio.com/";
   
-  <div class="form-group">
-    <label for="bankSelect">اختر البنك:</label>
-    <select id="bankSelect" onchange="loadBankData()">
-      <option value="">-- اختر بنك --</option>
-      <option value="CIH_BANK">CIH BANK</option>
-      <option value="AL_BARID_BANK">Albarid Bank</option>
-      <option value="CASH_PLUS">CASH PLUS</option>
-      <option value="ATTIJARIWAFA_BANK">Attijari Bank</option>
-      <option value="BMCE_BANK_OF_AFRICA">BMCE BANK</option>
-      <option value="BANQUE_POPULAIRE">Bank Populaire</option>
-      <option value="CREDIT_DU_MAROC">CDM Bank</option>
-      <option value="CFG_BANK">CFG Bank</option>
-      <option value="SG_MAROC">Societe Generale</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="beneficiary">اسم المستفيد (Beneficiary):</label>
-    <input type="text" id="beneficiary" placeholder="أدخل اسم المستفيد هنا">
-  </div>
-
-  <div class="form-group">
-    <label for="acc">رقم الحساب / RIB / Motif:</label>
-    <input type="text" id="acc" placeholder="أدخل رقم الحساب هنا">
-  </div>
-
-  <button class="save-btn" onclick="saveData()">حفظ التغييرات في Firebase</button>
-  <div class="msg" id="msg"></div>
-</div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
   const firebaseConfig = {
-    apiKey: "AIzaSyB4-IVk2V8VAHm6jjfw3BqdvAOW02sh",
+    apiKey: "AIzaSyB4-IVk2V8VAHm6jjfw3BqdvAOW02shD1g",
     authDomain: "admin-recharge.firebaseapp.com",
     databaseURL: "https://admin-recharge-default-rtdb.firebaseio.com",
     projectId: "admin-recharge",
@@ -162,46 +129,36 @@
     messagingSenderId: "751264405190",
     appId: "1:751264405190:web:bc3cc332ba9b40130be9c7"
   };
+  
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
+  const ADMIN_EMAIL = "fahdsoft2@gmail.com";
 
-  const ALLOWED_EMAIL = "Blackpear282893@gmail.com"; 
-
-  // التحقق من نتيجة إعادة التوجيه بعد رجوع المستخدم من جوجل
-  getRedirectResult(auth)
-    .then((result) => {
-      if (result) {
-        const user = result.user;
-        if (user.email === ALLOWED_EMAIL) {
-          document.getElementById('authOverlay').style.display = 'none';
-          document.getElementById('adminPanel').style.display = 'block';
-        } else {
-          document.getElementById('authMsg').textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
-          auth.signOut();
-        }
+  firebase.auth().onAuthStateChanged((user) => {
+    if (user && user.email === ADMIN_EMAIL) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminContent').style.display = 'block';
+    } else {
+      if (user) {
+        firebase.auth().signOut();
+        document.getElementById('loginMsg').style.color = 'red';
+        document.getElementById('loginMsg').textContent = 'هذا البريد غير مسموح له بالدخول كأدمن!';
       }
-    })
-    .catch((error) => {
-      document.getElementById('authMsg').textContent = "خطأ: " + error.message;
-    });
-
-  // فحص هل المستخدم مسجل مسبقاً
-  auth.onAuthStateChanged((user) => {
-    if (user && user.email === ALLOWED_EMAIL) {
-      document.getElementById('authOverlay').style.display = 'none';
-      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('adminContent').style.display = 'none';
     }
   });
 
-  document.getElementById('googleLoginBtn').addEventListener('click', () => {
-    signInWithRedirect(auth, provider);
-  });
-</script>
-
-<script>
-  const FIREBASE_URL_DB = "https://admin-recharge-default-rtdb.firebaseio.com/";
+  function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).catch((error) => {
+      const loginMsg = document.getElementById('loginMsg');
+      loginMsg.style.color = 'red';
+      loginMsg.textContent = 'فشل تسجيل الدخول: ' + error.message;
+    });
+  }
 
   async function loadBankData() {
     const bankKey = document.getElementById('bankSelect').value;
@@ -215,7 +172,7 @@
     }
 
     try {
-      const response = await fetch(`${FIREBASE_URL_DB}/banks/${bankKey}.json`);
+      const response = await fetch(`${FIREBASE_URL}/banks/${bankKey}.json`);
       const data = await response.json();
       
       if (data) {
@@ -248,7 +205,7 @@
     };
 
     try {
-      const response = await fetch(`${FIREBASE_URL_DB}/banks/${bankKey}.json`, {
+      const response = await fetch(`${FIREBASE_URL}/banks/${bankKey}.json`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -258,7 +215,7 @@
 
       if (response.ok) {
         msg.style.color = "green";
-        msg.textContent = "تم الحفظ بنجاح في Firebase!";
+        msg.textContent = "تم الحفظ بنجاح!";
       } else {
         msg.style.color = "red";
         msg.textContent = "فشل الحفظ!";

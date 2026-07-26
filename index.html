@@ -151,25 +151,40 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-  // *** تأكد من وضع إعدادات مشروعك الحقيقية هنا ***
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
+    apiKey: "AIzaSyB4-IVk2V8VAHm6jjfw3BqdvaOW02sh...", // تم إدخال بياناتك الحقيقية
+    authDomain: "admin-recharge.firebaseapp.com",
     databaseURL: "https://admin-recharge-default-rtdb.firebaseio.com/",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    projectId: "admin-recharge",
+    storageBucket: "admin-recharge.appspot.com",
+    messagingSenderId: "751264405190",
+    appId: "1:751264405190:web:bc3cc332ba9b40130be9c7"
   };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
 
-  // **الإيميل الوحيد المسموح له بالدخول**
+  // الجيميل الوحيد المسموح له بالتحكم بشكل حصري
   const ALLOWED_EMAIL = "Blackpear282893@gmail.com"; 
+
+  getRedirectResult(auth)
+    .then((result) => {
+      if (result && result.user) {
+        const user = result.user;
+        if (user.email === ALLOWED_EMAIL) {
+          document.getElementById('authOverlay').style.display = 'none';
+          document.getElementById('adminPanel').style.display = 'block';
+        } else {
+          document.getElementById('authMsg').textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
+          auth.signOut();
+        }
+      }
+    }).catch((error) => {
+      document.getElementById('authMsg').textContent = "خطأ في تسجيل الدخول: " + error.message;
+    });
 
   onAuthStateChanged(auth, (user) => {
     if (user && user.email === ALLOWED_EMAIL) {
@@ -178,23 +193,8 @@
     }
   });
 
-  document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-    const msg = document.getElementById('authMsg');
-    msg.textContent = "جاري الاتصال بـ Google...";
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      if (user.email === ALLOWED_EMAIL) {
-        document.getElementById('authOverlay').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'block';
-      } else {
-        msg.textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
-        await auth.signOut();
-      }
-    } catch (error) {
-      msg.textContent = "خطأ في تسجيل الدخول: " + error.message;
-    }
+  document.getElementById('googleLoginBtn').addEventListener('click', () => {
+    signInWithRedirect(auth, provider);
   });
 </script>
 

@@ -70,6 +70,13 @@
     .logout-btn:hover {
       background: #c9302c;
     }
+    .refresh-btn {
+      background: #0275d8;
+      margin-top: 5px;
+    }
+    .refresh-btn:hover {
+      background: #025aa5;
+    }
     .msg {
       margin-top: 15px;
       text-align: center;
@@ -87,23 +94,6 @@
       margin-bottom: 15px;
       font-size: 14px;
       color: #555;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid #ccc;
-      border-top: 2px solid #080b3d;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -148,6 +138,7 @@
     </div>
 
     <button id="saveBtn" onclick="saveData()">حفظ التغييرات في Firebase</button>
+    <button class="refresh-btn" onclick="location.reload()">تحديث الصفحة</button>
     <button class="logout-btn" onclick="logoutAccount()">تسجيل الخروج</button>
     <div class="msg" id="msg"></div>
   </div>
@@ -170,7 +161,7 @@
     firebase.initializeApp(firebaseConfig);
   }
 
-  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
   const ADMIN_UID = "4YFxcoEp8nd3ZmMxXcrYs97YjQn1";
 
@@ -178,7 +169,7 @@
     if (user && user.uid === ADMIN_UID) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminContent').style.display = 'block';
-      document.getElementById('userInfo').innerHTML = 'مسجل الدخول بـ: ' + user.email + ' <span class="spinner"></span>';
+      document.getElementById('userInfo').textContent = "مسجل الدخول بـ: " + user.email;
       loadBankData();
     } else {
       if (user) {
@@ -232,6 +223,7 @@
     } catch (error) {
       msg.style.color = "red";
       msg.textContent = "خطأ أثناء جلب البيانات!";
+      setTimeout(() => { msg.textContent = ""; }, 3000);
     }
   }
 
@@ -243,6 +235,7 @@
     if (!user || user.uid !== ADMIN_UID) {
       msg.style.color = "red";
       msg.textContent = "غير مسموح لك بالحفظ، الـ ID غير مطابق!";
+      setTimeout(() => { msg.textContent = ""; }, 3000);
       return;
     }
 
@@ -283,9 +276,10 @@
       msg.style.color = "red";
       msg.textContent = "حدث خطأ في الاتصال!";
     } finally {
+      saveBtn.disabled = false;
       setTimeout(() => {
-        saveBtn.disabled = false;
-      }, 2000);
+        msg.textContent = "";
+      }, 3000);
     }
   }
 </script>

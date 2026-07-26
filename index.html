@@ -151,7 +151,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB4-IVk2V8VAHm6jjfw3BqdvaOW02sh",
@@ -168,22 +168,6 @@
 
   const ALLOWED_EMAIL = "Blackpear282893@gmail.com"; 
 
-  getRedirectResult(auth)
-    .then((result) => {
-      if (result && result.user) {
-        const user = result.user;
-        if (user.email === ALLOWED_EMAIL) {
-          document.getElementById('authOverlay').style.display = 'none';
-          document.getElementById('adminPanel').style.display = 'block';
-        } else {
-          document.getElementById('authMsg').textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
-          auth.signOut();
-        }
-      }
-    }).catch((error) => {
-      document.getElementById('authMsg').textContent = "خطأ في تسجيل الدخول: " + error.message;
-    });
-
   onAuthStateChanged(auth, (user) => {
     if (user && user.email === ALLOWED_EMAIL) {
       document.getElementById('authOverlay').style.display = 'none';
@@ -192,7 +176,20 @@
   });
 
   document.getElementById('googleLoginBtn').addEventListener('click', () => {
-    signInWithRedirect(auth, provider);
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        const user = result.user;
+        if (user.email === ALLOWED_EMAIL) {
+          document.getElementById('authOverlay').style.display = 'none';
+          document.getElementById('adminPanel').style.display = 'block';
+        } else {
+          document.getElementById('authMsg').textContent = "هذا البريد الإلكتروني غير مسموح له بالدخول!";
+          auth.signOut();
+        }
+      })
+      .catch((error) => {
+        document.getElementById('authMsg').textContent = "خطأ في تسجيل الدخول: " + error.message;
+      });
   });
 </script>
 
